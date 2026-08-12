@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Professional & Modern Styling with Hover Gradient Animation
+# Professional & Modern Styling (High-Contrast Text & Hover Gradient)
 st.markdown("""
 <style>
     /* Main Background & Font Styling */
@@ -25,17 +25,21 @@ st.markdown("""
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* Title & Header Styling */
+    /* Title & High-Contrast Dark Text */
     h1 {
-        color: #1E293B;
+        color: #0F172A !important;
         font-weight: 700;
         font-size: 2.1rem !important;
         margin-bottom: 0.2rem !important;
     }
     
-    p {
-        color: #64748B;
-        font-size: 0.95rem;
+    h2, h3, h4, label, p, span, div {
+        color: #1E293B !important;
+        font-weight: 500;
+    }
+
+    .stCaption {
+        color: #334155 !important;
     }
 
     /* Primary Action Buttons - Normal State */
@@ -58,7 +62,7 @@ st.markdown("""
         box-shadow: 0 10px 20px -3px rgba(168, 85, 247, 0.35) !important;
     }
 
-    /* Primary Action Buttons - Active (เมื่อกดปุ่ม) */
+    /* Primary Action Buttons - Active */
     .stButton>button:active {
         transform: translateY(0px);
         box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2) !important;
@@ -81,32 +85,33 @@ st.markdown("""
         box-shadow: 0 10px 20px -3px rgba(6, 182, 212, 0.35) !important;
     }
 
-    /* Small Control Buttons (Reorder & Delete) */
+    /* Small Control Buttons (Reorder & Delete) - High Contrast Text */
     button[data-testid="baseButton-secondary"] {
         background: #F1F5F9 !important;
-        color: #475569 !important;
-        border: 1px solid #E2E8F0 !important;
+        color: #0F172A !important;
+        border: 1px solid #CBD5E1 !important;
         border-radius: 8px !important;
+        font-weight: 700 !important;
         transition: all 0.2s ease !important;
     }
     
     button[data-testid="baseButton-secondary"]:hover {
         background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%) !important;
-        color: #0F172A !important;
+        color: #000000 !important;
         transform: translateY(-1px);
     }
 
     /* File Uploader Container */
     [data-testid="stFileUploader"] {
         background-color: #FFFFFF;
-        border: 2px dashed #CBD5E1;
+        border: 2px dashed #94A3B8;
         border-radius: 12px;
         padding: 1rem;
         transition: all 0.3s ease;
     }
     [data-testid="stFileUploader"]:hover {
-        border-color: #8B5CF6;
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+        border-color: #6366F1;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
     }
 </style>
 """, unsafe_allow_html=True)
