@@ -35,24 +35,32 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# สร้าง Session State สำหรับเก็บไฟล์แบบเสถียร
+# สร้าง Session State สำหรับจัดการความจำไฟล์และ Key
 if "pdf_files" not in st.session_state:
     st.session_state.pdf_files = []
 
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
+
+# ฟังก์ชันสำหรับล้างไฟล์ออกจากระบบแบบ 100%
+def clear_all_data():
+    st.session_state.pdf_files = []
+    st.session_state.uploader_key += 1  # เปลี่ยน Key เพื่อบังคับให้กล่องอัปโหลดล้างไฟล์เก่าทิ้งทันที
+
 # ฟังก์ชันอัปเดตไฟล์ใหม่เข้าลิสต์
 def add_files():
-    if st.session_state.uploader_key:
-        for f in st.session_state.uploader_key:
-            # ป้องกันไฟล์ซ้ำตามชื่อและขนาด
+    key_name = f"uploader_{st.session_state.uploader_key}"
+    if key_name in st.session_state and st.session_state[key_name]:
+        for f in st.session_state[key_name]:
             if not any(existing.name == f.name and existing.size == f.size for existing in st.session_state.pdf_files):
                 st.session_state.pdf_files.append(f)
 
-# 3. กล่องอัปโหลดไฟล์
+# 3. กล่องอัปโหลดไฟล์ (รีเซ็ตใหม่จริงเมื่อกดล้าง)
 st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
     accept_multiple_files=True,
-    key="uploader_key",
+    key=f"uploader_{st.session_state.uploader_key}",
     on_change=add_files
 )
 
@@ -78,9 +86,8 @@ if st.session_state.pdf_files:
                 st.session_state.pdf_files[idx], st.session_state.pdf_files[idx+1] = st.session_state.pdf_files[idx+1], st.session_state.pdf_files[idx]
                 st.rerun()
 
-    # ปุ่มล้างทั้งหมด
-    if st.button("ล้างทั้งหมด ✖"):
-        st.session_state.pdf_files = []
+    # ปุ่มล้างทั้งหมด (ล้างทั้งความจำและกล่องอัปโหลด)
+    if st.button("ล้างทั้งหมด ✖", on_click=clear_all_data):
         st.rerun()
 
 st.write("---")
