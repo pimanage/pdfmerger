@@ -2,141 +2,203 @@ import io
 import streamlit as st
 from pypdf import PdfReader, PdfWriter
 
-# 1. กำหนดโครงสร้างหมวดหมู่
+# 1. Define Category Structure
 CATEGORIES = {
-    "หมวดหลัก_A": ["หมวดย่อย_1.1", "หมวดย่อย_1.2", "หมวดย่อย_1.3"],
-    "หมวดหลัก_B": ["หมวดย่อย_2.1", "หมวดย่อย_2.2"],
-    "หมวดหลัก_C": ["หมวดย่อย_3.1", "หมวดย่อย_3.2"]
+    "Category_A": ["Sub_Category_1.1", "Sub_Category_1.2", "Sub_Category_1.3"],
+    "Category_B": ["Sub_Category_2.1", "Sub_Category_2.2"],
+    "Category_C": ["Sub_Category_3.1", "Sub_Category_3.2"]
 }
 
-# 2. ตั้งค่าหน้าตา Web App
+# 2. Page Configuration
 st.set_page_config(
-    page_title="✿ PDF Merger & Naming Tool ✿",
-    page_icon="✿",
+    page_title="PDF Merger & Auto-Naming Tool",
+    page_icon="📄",
     layout="centered"
 )
 
-# Custom CSS ตกแต่งสีพาสเทล
+# Professional & Modern Styling (Clean, Elegant Pastel Soft Tone)
 st.markdown("""
 <style>
+    /* Main Background & Font Styling */
     .stApp {
-        background-color: #FFF5F5;
+        background-color: #FAFAFC;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
+    
+    /* Title & Header Styling */
+    h1 {
+        color: #1E293B;
+        font-weight: 700;
+        font-size: 2.1rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+    
+    p {
+        color: #64748B;
+        font-size: 0.95rem;
+    }
+
+    /* Primary Action Buttons */
     .stButton>button {
-        background-color: #FFC6FF;
-        color: #5A4B4B;
+        background-color: #6366F1;
+        color: #FFFFFF;
         border-radius: 8px;
         border: none;
-        font-weight: 500;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease-in-out;
+    }
+    .stButton>button:hover {
+        background-color: #4F46E5;
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    /* Small Control Buttons (Reorder & Delete) */
+    button[data-testid="baseButton-secondary"] {
+        background-color: #F1F5F9 !important;
+        color: #475569 !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 6px !important;
+    }
+    button[data-testid="baseButton-secondary"]:hover {
+        background-color: #E2E8F0 !important;
+        color: #0F172A !important;
+    }
+
+    /* File Uploader Container */
+    [data-testid="stFileUploader"] {
+        background-color: #FFFFFF;
+        border: 2px dashed #CBD5E1;
+        border-radius: 12px;
+        padding: 1rem;
+    }
+    [data-testid="stFileUploader"]:hover {
+        border-color: #6366F1;
+    }
+
+    /* Divider */
+    hr {
+        margin: 1.5rem 0;
+        border-color: #F1F5F9;
     }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("✿ PDF Merger & Naming Tool ✿")
-st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
+# App Header
+st.title("📄 PDF Merger & Naming Tool")
+st.write("Streamline your document workflow: merge multiple PDF files and standardize file names instantly.")
 
-# Session State ระบบความจำหลังบ้าน
+st.divider()
+
+# Session State Management
 if "file_list" not in st.session_state:
     st.session_state.file_list = []
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
-# ฟังก์ชันดึงไฟล์ลงมาเก็บหลังบ้าน แล้วเคลียร์กล่องบนให้ว่างเปล่าทันที
+# Function to handle uploaded files and auto-clear top container
 def process_new_files():
     key_name = f"uploader_{st.session_state.uploader_key}"
     uploaded = st.session_state.get(key_name, [])
     
     if uploaded:
         for f in uploaded:
-            # ป้องกันไฟล์ซ้ำตามชื่อและขนาด
             if not any(item['name'] == f.name and item['file'].size == f.size for item in st.session_state.file_list):
                 st.session_state.file_list.append({'name': f.name, 'file': f})
-        
-        # เปลี่ยน Key ของ Uploader เพื่อรีเซ็ตกล่องบนให้กลายเป็นกล่องว่างเปล่าทันที
         st.session_state.uploader_key += 1
 
-# 3. กล่องอัปโหลดไฟล์ (จะถูกรีเซ็ตให้ว่างเปล่าอัตโนมัติทุกครั้งที่เลือกไฟล์)
+# 3. File Upload Area
+st.subheader("1. Upload PDF Files")
 st.file_uploader(
-    "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
+    "Drag & drop PDF files here or click to browse",
     type=["pdf"],
     accept_multiple_files=True,
     key=f"uploader_{st.session_state.uploader_key}",
-    on_change=process_new_files
+    on_change=process_new_files,
+    label_visibility="collapsed"
 )
 
-# 4. ส่วนจัดการไฟล์จุดเดียว (แสดงรายการ / เลื่อนขึ้นลง / ลบทีละไฟล์)
+# 4. File Queue & Reorder Section
 if st.session_state.file_list:
     st.write("---")
-    st.subheader("📋 รายการไฟล์ที่เลือกทั้งหมด")
+    st.subheader("📋 Document Queue & Ordering")
+    st.caption("Adjust the merging sequence or remove unwanted files below:")
     
     for idx, item in enumerate(st.session_state.file_list):
-        col_num, col_name, col_up, col_down, col_del = st.columns([0.5, 5, 1, 1, 1])
+        col_num, col_name, col_up, col_down, col_del = st.columns([0.6, 5.4, 1, 1, 1])
         
-        col_num.write(f"**{idx + 1}.**")
+        col_num.markdown(f"**#{idx + 1}**")
         col_name.write(f"📄 {item['name']}")
         
-        # ปุ่มเลื่อนขึ้น
-        if col_up.button("▲", key=f"up_{idx}"):
+        # Move Up
+        if col_up.button("▲", key=f"up_{idx}", help="Move file up"):
             if idx > 0:
                 st.session_state.file_list[idx], st.session_state.file_list[idx-1] = st.session_state.file_list[idx-1], st.session_state.file_list[idx]
                 st.rerun()
                 
-        # ปุ่มเลื่อนลง
-        if col_down.button("▼", key=f"down_{idx}"):
+        # Move Down
+        if col_down.button("▼", key=f"down_{idx}", help="Move file down"):
             if idx < len(st.session_state.file_list) - 1:
                 st.session_state.file_list[idx], st.session_state.file_list[idx+1] = st.session_state.file_list[idx+1], st.session_state.file_list[idx]
                 st.rerun()
                 
-        # ปุ่มลบไฟล์เดี่ยว (ลบออกแล้วหายสาบสูญ ไม่เด้งกลับมาอีกแน่นอน)
-        if col_del.button("🗑️", key=f"del_{idx}"):
+        # Remove File
+        if col_del.button("✕", key=f"del_{idx}", help="Remove this file"):
             st.session_state.file_list.pop(idx)
             st.rerun()
 
-    # ปุ่มล้างรายการทั้งหมด
-    if st.button("✖ ล้างไฟล์ทั้งหมด ✖", use_container_width=True):
+    # Clear All Button
+    if st.button("Clear All Files", use_container_width=False):
         st.session_state.file_list = []
         st.rerun()
 
-st.write("---")
+st.divider()
 
-# 5. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
-selected_main = st.selectbox(
-    "🎀 1. เลือกหมวดหลัก:",
-    options=list(CATEGORIES.keys())
-)
+# 5. Metadata & Naming Convention
+st.subheader("2. Document Naming & Categorization")
 
-sub_options = CATEGORIES.get(selected_main, [])
-selected_sub = st.selectbox(
-    "🎀 2. เลือกหมวดย่อย:",
-    options=sub_options
-)
+col1, col2 = st.columns(2)
 
-# 6. คำนวณชื่อไฟล์ตั้งต้น และช่องให้แก้ไข
-default_filename = f"{selected_main}_{selected_sub}_[ระบุรายละเอียด]"
+with col1:
+    selected_main = st.selectbox(
+        "Main Category",
+        options=list(CATEGORIES.keys())
+    )
+
+with col2:
+    sub_options = CATEGORIES.get(selected_main, [])
+    selected_sub = st.selectbox(
+        "Sub Category",
+        options=sub_options
+    )
+
+default_filename = f"{selected_main}_{selected_sub}_Details"
 
 final_filename = st.text_input(
-    "✏ 3. ชื่อไฟล์ระบบตั้งให้ (แก้ไขเพิ่มเติมตรงนี้ได้เลยค่ะ):",
-    value=default_filename
+    "Standardized Filename Output",
+    value=default_filename,
+    help="You can edit the final file name here before merging."
 )
 
-st.write("---")
+st.divider()
 
-# 7. ปุ่มรวมไฟล์และดาวน์โหลด
-if st.button("★  เริ่มบันทึกและรวมไฟล์  ★", use_container_width=True):
+# 6. Merge & Process Section
+if st.button("⚡ Merge & Download PDF", use_container_width=True):
     active_items = st.session_state.file_list
     
     if not active_items:
-        st.error("แจ้งเตือน: ยังไม่มีไฟล์ PDF ในระบบเลยค่ะ")
+        st.error("Please upload at least one PDF file before processing.")
     elif not final_filename.strip():
-        st.error("แจ้งเตือน: กรุณาใส่ชื่อไฟล์ด้วยนะคะ")
+        st.error("Please provide a valid filename.")
     else:
         save_filename = final_filename.strip()
         if not save_filename.lower().endswith(".pdf"):
             save_filename += ".pdf"
             
         try:
-            with st.spinner("ระบบกำลังรวมไฟล์ให้อยู่นะคะ..."):
+            with st.spinner("Merging documents, please wait..."):
                 writer = PdfWriter()
                 for item in active_items:
                     reader = PdfReader(item['file'])
@@ -147,13 +209,16 @@ if st.button("★  เริ่มบันทึกและรวมไฟล�
                 writer.write(output_pdf)
                 output_pdf.seek(0)
                 
-            st.success("ระบบรวมไฟล์และตั้งชื่อให้เรียบร้อยแล้วนะคะ ✿")
+            st.success("PDF merged and named successfully!")
             
             st.download_button(
-                label=f"⬇️ บันทึกไฟล์ {save_filename}",
+                label=f"⬇️ Download {save_filename}",
                 data=output_pdf,
                 file_name=save_filename,
-                mime="application/pdf"
+                mime="application/pdf",
+                use_container_width=True
             )
         except Exception as e:
-            st.error(f"เกิดข้อผิดพลาด ระบบหลังบ้านมีปัญหา: {str(e)}")
+            st.error(f"Processing Error: {str(e)}")
+
+st.caption("Designed for automated document management and workflow efficiency.")
