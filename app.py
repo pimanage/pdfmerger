@@ -2,71 +2,126 @@ import io
 import streamlit as st
 from pypdf import PdfReader, PdfWriter
 
+# 1. กำหนดโครงสร้างหมวดหมู่ตามโค้ดเดิมของคุณ
+CATEGORIES = {
+    "หมวดหลัก_A": ["หมวดย่อย_1.1", "หมวดย่อย_1.2", "หมวดย่อย_1.3"],
+    "หมวดหลัก_B": ["หมวดย่อย_2.1", "หมวดย่อย_2.2"],
+    "หมวดหลัก_C": ["หมวดย่อย_3.1", "หมวดย่อย_3.2"]
+}
+
+# 2. ตั้งค่าหน้าตา Web App และแต่ง CSS โทนสีพาสเทลตามโค้ด Tkinter
 st.set_page_config(
-    page_title="PDF Merge & Auto-Naming Tool",
-    page_icon="📄",
+    page_title="✿ PDF Merger & Naming Tool ✿",
+    page_icon="✿",
     layout="centered"
 )
 
-st.title("📄 PDF Merge & Auto-Naming Tool")
-st.markdown("A workplace solution for merging restricted e-signature PDFs and automating **Veeva Vault** document naming compliance.")
-
-st.divider()
-
-# 1. ส่วนเลือกประเภทเอกสาร (Category Selectors)
-st.subheader("1. Document Metadata")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    main_category = st.selectbox(
-        "Main Category",
-        options=["Regulatory", "Clinical Operations", "Ethics Committee", "Site Management"],
-        index=0
-    )
-
-with col2:
-    sub_categories = {
-        "Regulatory": ["FDA Approval", "Import License", "Safety Report"],
-        "Clinical Operations": ["Protocol Amendment", "Informed Consent", "Monitoring Report"],
-        "Ethics Committee": ["EC Approval Letter", "Annual Progress Report", "Submission Form"],
-        "Site Management": ["Financial Agreement", "CV Investigator", "Training Log"]
+# Custom CSS ตกแต่งสีพาสเทล
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #FFF5F5;
     }
-    sub_category = st.selectbox(
-        "Sub Category",
-        options=sub_categories.get(main_category, ["General"]),
-        index=0
-    )
+    .stButton>button {
+        background-color: #FFC6FF;
+        color: #5A4B4B;
+        border-radius: 8px;
+        border: none;
+        font-weight: 500;
+    }
+    div[data-testid="stForm"] {
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        padding: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-doc_detail = st.text_input("Document Detail / Site ID", value="Site101_v1.0")
+st.title("✿ PDF Merger & Naming Tool ✿")
+st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-formatted_main = main_category.replace(" ", "")
-formatted_sub = sub_category.replace(" ", "")
-generated_filename = f"{formatted_main}_{formatted_sub}_{doc_detail}.pdf"
-
-st.info(f"🏷️ **Target Filename:** `{generated_filename}`")
-
-st.divider()
-
-# 2. ส่วนอัปโหลดและประมวลผล PDF
-st.subheader("2. Upload PDFs to Merge")
-
+# 3. ส่วนกล่องอัปโหลดไฟล์ (รับ Drag & Drop และการคลิกเลือกไฟล์)
 uploaded_files = st.file_uploader(
-    "Select or drag & drop restricted e-signature PDF files",
+    "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
     accept_multiple_files=True
 )
 
+# จัดเก็บและจัดการลำดับไฟล์ใน Session State
+if "pdf_list" not in st.session_state:
+    st.session_state.pdf_list = []
+
 if uploaded_files:
-    st.success(f"Selected {len(uploaded_files)} file(s).")
+    # อัปเดตรายชื่อไฟล์เข้า session หากมีการเลือกไฟล์ใหม่
+    st.session_state.pdf_list = list(uploaded_files)
+
+if st.session_state.pdf_list:
+    st.write("---")
+    st.subheader("📋 รายชื่อไฟล์ที่เลือก")
     
-    if st.button("⚡ Merge & Rename PDF", type="primary"):
-        with st.spinner("Processing files..."):
-            try:
-                writer = PdfWriter()
+    # แสดงรายการไฟล์และปุ่มควบคุม
+    for idx, file in enumerate(st.session_state.pdf_list):
+        col_name, col_up, col_down = st.columns([6, 1, 1])
+        col_name.text(f"{idx + 1}. {file.name}")
+        
+        # ปุ่มเลื่อนขึ้น
+        if col_up.button("▲", key=f"up_{idx}"):
+            if idx > 0:
+                st.session_state.pdf_list[idx], st.session_state.pdf_list[idx-1] = st.session_state.pdf_list[idx-1], st.session_state.pdf_list[idx]
+                st.rerun()
                 
-                for uploaded_file in uploaded_files:
-                    reader = PdfReader(uploaded_file)
+        # ปุ่มเลื่อนลง
+        if col_down.button("▼", key=f"down_{idx}"):
+            if idx < len(st.session_state.pdf_list) - 1:
+                st.session_state.pdf_list[idx], st.session_state.pdf_list[idx+1] = st.session_state.pdf_list[idx+1], st.session_state.pdf_list[idx]
+                st.rerun()
+
+    # ปุ่มล้างทั้งหมด
+    if st.button("ล้างทั้งหมด ✖"):
+        st.session_state.pdf_list = []
+        st.rerun()
+
+st.write("---")
+
+# 4. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
+selected_main = st.selectbox(
+    "🎀 1. เลือกหมวดหลัก:",
+    options=list(CATEGORIES.keys())
+)
+
+sub_options = CATEGORIES.get(selected_main, [])
+selected_sub = st.selectbox(
+    "🎀 2. เลือกหมวดย่อย:",
+    options=sub_options
+)
+
+# 5. คำนวณชื่อไฟล์ตั้งต้น และช่องให้ผู้ใช้แก้ไขชื่อไฟล์เพิ่มเติมได้
+default_filename = f"{selected_main}_{selected_sub}_[ระบุรายละเอียด]"
+
+final_filename = st.text_input(
+    "✏ 3. ชื่อไฟล์ระบบตั้งให้ (แก้ไขเพิ่มเติมตรงนี้ได้เลยค่ะ):",
+    value=default_filename
+)
+
+st.write("---")
+
+# 6. ปุ่มรวมไฟล์และดาวน์โหลด
+if st.button("★  เริ่มบันทึกและรวมไฟล์  ★", use_container_width=True):
+    if not st.session_state.pdf_list:
+        st.error("แจ้งเตือน: ยังไม่มีไฟล์ PDF ในระบบเลยค่ะ")
+    elif not final_filename.strip():
+        st.error("แจ้งเตือน: กรุณาใส่ชื่อไฟล์ด้วยนะคะ")
+    else:
+        # ตรวจสอบนามสกุลไฟล์
+        save_filename = final_filename.strip()
+        if not save_filename.lower().endswith(".pdf"):
+            save_filename += ".pdf"
+            
+        try:
+            with st.spinner("ระบบกำลังรวมไฟล์ให้อยู่นะคะ..."):
+                writer = PdfWriter()
+                for pdf_file in st.session_state.pdf_list:
+                    reader = PdfReader(pdf_file)
                     for page in reader.pages:
                         writer.add_page(page)
                 
@@ -74,18 +129,14 @@ if uploaded_files:
                 writer.write(output_pdf)
                 output_pdf.seek(0)
                 
-                st.balloons()
-                st.success("PDF processing completed!")
-                
-                st.download_button(
-                    label=f"⬇️ Download {generated_filename}",
-                    data=output_pdf,
-                    file_name=generated_filename,
-                    mime="application/pdf"
-                )
-                
-            except Exception as e:
-                st.error(f"Processing error: {str(e)}")
-
-st.divider()
-st.caption("Designed for Clinical Trial Management Systems (CTMS / eTMF) Compliance.")
+            st.success("ระบบรวมไฟล์และตั้งชื่อให้เรียบร้อยแล้วนะคะ ✿")
+            
+            # ปุ่มดาวน์โหลดไฟล์ลงเครื่อง
+            st.download_button(
+                label=f"⬇️ บันทึกไฟล์ {save_filename}",
+                data=output_pdf,
+                file_name=save_filename,
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.error(f"เกิดข้อผิดพลาด ระบบหลังบ้านมีปัญหา: {str(e)}")
