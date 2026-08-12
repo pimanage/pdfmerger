@@ -36,19 +36,18 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# Session state จัดเก็บข้อมูล
+# Session state สำหรับจัดเก็บข้อมูล
 if "pdf_files_dict" not in st.session_state:
     st.session_state.pdf_files_dict = {}
 
 if "sorted_filenames" not in st.session_state:
     st.session_state.sorted_filenames = []
 
-# ฟังก์ชันอัปเดตไฟล์แบบต่อท้ายเสมอ (ไม่ลบไฟล์เก่า)
+# ฟังก์ชันอัปเดตไฟล์เมื่อมีการเลือกไฟล์เพิ่ม
 def sync_uploaded_files():
     uploaded = st.session_state.get("uploader_widget", [])
     if uploaded:
         for f in uploaded:
-            # เพิ่มไฟล์ใหม่เข้า Dictionary และต่อท้ายลิสต์จัดลำดับ
             if f.name not in st.session_state.pdf_files_dict:
                 st.session_state.pdf_files_dict[f.name] = f
                 st.session_state.sorted_filenames.append(f.name)
@@ -62,18 +61,21 @@ st.file_uploader(
     on_change=sync_uploaded_files
 )
 
-# 4. ส่วน Drag & Drop สลับลำดับแนวตั้ง
+# 4. ส่วน Drag & Drop สลับลำดับแนวตั้ง (ใช้ Dynamic Key รีเซ็ต Widget เมื่อไฟล์เพิ่ม)
 if len(st.session_state.sorted_filenames) > 1:
     st.write("---")
     st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
     
+    # บังคับอัปเดต Widget ด้วยการสร้าง key ตามจำนวนไฟล์ + ชื่อไฟล์รวมกัน
+    dynamic_key = f"sortable_{len(st.session_state.sorted_filenames)}_{'_'.join(st.session_state.sorted_filenames)}"
+    
     sorted_res = sort_items(
         st.session_state.sorted_filenames,
         direction="vertical",
-        key="sortable_list"
+        key=dynamic_key
     )
     
-    if sorted_res and sorted_res != st.session_state.sorted_filenames:
+    if sorted_res:
         st.session_state.sorted_filenames = sorted_res
 
 st.write("---")
