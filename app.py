@@ -41,7 +41,7 @@ st.markdown("""
     /* Primary Action Buttons */
     .stButton>button {
         background-color: #9e477b;
-        color: #FFFFFF;
+        color: #000000;
         border-radius: 8px;
         border: none;
         font-weight: 600;
@@ -50,7 +50,7 @@ st.markdown("""
     }
     .stButton>button:hover {
         background-color: #ba5290;
-        color: #FFFFFF;
+        color: #000000;
         box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
     }
 
