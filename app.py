@@ -35,24 +35,23 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# Session State ความจำระบบกลางจุดเดียว
+# Session State ระบบความจำกลาง
 if "file_list" not in st.session_state:
-    st.session_state.file_list = []  # เก็บเป็น list ของ dict: [{'name': filename, 'file': file_obj}]
+    st.session_state.file_list = []
 
 if "uploader_key" not in st.session_state:
     st.session_state.uploader_key = 0
 
-# ฟังก์ชันอัปเดตไฟล์ใหม่เข้าลิสต์แบบต่อท้าย
+# ฟังก์ชันเพิ่มไฟล์ใหม่โดยไม่ซ้ำ
 def sync_uploaded_files():
     key_name = f"uploader_{st.session_state.uploader_key}"
     uploaded = st.session_state.get(key_name, [])
     if uploaded:
         for f in uploaded:
-            # ป้องกันไฟล์ซ้ำ
             if not any(item['name'] == f.name and item['file'].size == f.size for item in st.session_state.file_list):
                 st.session_state.file_list.append({'name': f.name, 'file': f})
 
-# 3. กล่องอัปโหลดไฟล์
+# 3. กล่องอัปโหลดไฟล์ (ซิงค์ตาม uploader_key)
 st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
@@ -61,12 +60,11 @@ st.file_uploader(
     on_change=sync_uploaded_files
 )
 
-# 4. ส่วนจัดการไฟล์จุดเดียวจบ (แสดงรายการ / ขยับลำดับ / กดลบ)
+# 4. ส่วนจัดการไฟล์ (แสดง / สลับลำดับ / ลบไฟล์เดี่ยว / ลบทั้งหมด)
 if st.session_state.file_list:
     st.write("---")
     st.subheader("📋 รายการไฟล์และการจัดลำดับ")
     
-    # ลูปแสดงรายการไฟล์แต่ละไฟล์
     for idx, item in enumerate(st.session_state.file_list):
         col_num, col_name, col_up, col_down, col_del = st.columns([0.5, 5, 1, 1, 1])
         
@@ -85,15 +83,16 @@ if st.session_state.file_list:
                 st.session_state.file_list[idx], st.session_state.file_list[idx+1] = st.session_state.file_list[idx+1], st.session_state.file_list[idx]
                 st.rerun()
                 
-        # ปุ่มลบไฟล์แบบเด็ดขาด (ลบแล้วหายทันทีทั้งหน้าจอและหลังบ้าน)
+        # ปุ่มลบเฉพาะไฟล์นี้ (สั่งซิงค์ลบกล่องบนทันที)
         if col_del.button("🗑️", key=f"del_{idx}"):
             st.session_state.file_list.pop(idx)
+            st.session_state.uploader_key += 1  # เปลี่ยน Key เพื่อบังคับให้กล่องข้างบนรีเฟรชล้างไฟล์ตามทันที
             st.rerun()
 
-    # ปุ่มล้างรายการทั้งหมดในคลิกเดียว
+    # ปุ่มล้างไฟล์ทั้งหมด
     if st.button("✖ ล้างไฟล์ทั้งหมด ✖", use_container_width=True):
         st.session_state.file_list = []
-        st.session_state.uploader_key += 1  # รีเซ็ตกล่อง uploader
+        st.session_state.uploader_key += 1
         st.rerun()
 
 st.write("---")
