@@ -35,41 +35,30 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# สร้าง Session State สำหรับจัดการความจำไฟล์และ Key
+# สร้าง Session State สำหรับเก็บไฟล์ที่ใช้งานจริง
 if "pdf_files" not in st.session_state:
     st.session_state.pdf_files = []
 
-if "uploader_key" not in st.session_state:
-    st.session_state.uploader_key = 0
+# ฟังก์ชันอัปเดตไฟล์จากกล่อง Upload
+def sync_uploaded_files():
+    # ดึงไฟล์ทั้งหมดจาก Widget
+    raw_files = st.session_state.get("uploader_widget", [])
+    st.session_state.pdf_files = list(raw_files)
 
-# ฟังก์ชันสำหรับล้างไฟล์ออกจากระบบแบบ 100%
-def clear_all_data():
-    st.session_state.pdf_files = []
-    st.session_state.uploader_key += 1  # เปลี่ยน Key เพื่อบังคับให้กล่องอัปโหลดล้างไฟล์เก่าทิ้งทันที
-
-# ฟังก์ชันอัปเดตไฟล์ใหม่เข้าลิสต์
-def add_files():
-    key_name = f"uploader_{st.session_state.uploader_key}"
-    if key_name in st.session_state and st.session_state[key_name]:
-        for f in st.session_state[key_name]:
-            if not any(existing.name == f.name and existing.size == f.size for existing in st.session_state.pdf_files):
-                st.session_state.pdf_files.append(f)
-
-# 3. กล่องอัปโหลดไฟล์ (รีเซ็ตใหม่จริงเมื่อกดล้าง)
-st.file_uploader(
+# 3. รวมการจัดการไฟล์ไว้จุดเดียว (อัปโหลด / ลบ / ดูรายการ)
+uploaded_raw = st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
     accept_multiple_files=True,
-    key=f"uploader_{st.session_state.uploader_key}",
-    on_change=add_files
+    key="uploader_widget",
+    on_change=sync_uploaded_files
 )
 
-# 4. ส่วนแสดงรายการและปุ่มควบคุม
-if st.session_state.pdf_files:
+# แสดงปุ่มจัดลำดับเฉพาะเมื่อมีไฟล์ในระบบมากกว่า 1 ไฟล์
+if len(st.session_state.pdf_files) > 1:
     st.write("---")
-    st.subheader("📋 รายชื่อไฟล์ที่เลือก")
+    st.subheader("📋 จัดลำดับการรวมไฟล์")
     
-    # แสดงรายการไฟล์และปุ่มเลื่อน
     for idx, file in enumerate(st.session_state.pdf_files):
         col_name, col_up, col_down = st.columns([6, 1, 1])
         col_name.text(f"{idx + 1}. {file.name}")
@@ -86,13 +75,9 @@ if st.session_state.pdf_files:
                 st.session_state.pdf_files[idx], st.session_state.pdf_files[idx+1] = st.session_state.pdf_files[idx+1], st.session_state.pdf_files[idx]
                 st.rerun()
 
-    # ปุ่มล้างทั้งหมด (ล้างทั้งความจำและกล่องอัปโหลด)
-    if st.button("ล้างทั้งหมด ✖", on_click=clear_all_data):
-        st.rerun()
-
 st.write("---")
 
-# 5. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
+# 4. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
 selected_main = st.selectbox(
     "🎀 1. เลือกหมวดหลัก:",
     options=list(CATEGORIES.keys())
@@ -104,7 +89,7 @@ selected_sub = st.selectbox(
     options=sub_options
 )
 
-# 6. คำนวณชื่อไฟล์ตั้งต้น และช่องให้แก้ไข
+# 5. คำนวณชื่อไฟล์ตั้งต้น และช่องให้แก้ไข
 default_filename = f"{selected_main}_{selected_sub}_[ระบุรายละเอียด]"
 
 final_filename = st.text_input(
@@ -114,9 +99,12 @@ final_filename = st.text_input(
 
 st.write("---")
 
-# 7. ปุ่มรวมไฟล์และดาวน์โหลด
+# 6. ปุ่มรวมไฟล์และดาวน์โหลด
 if st.button("★  เริ่มบันทึกและรวมไฟล์  ★", use_container_width=True):
-    if not st.session_state.pdf_files:
+    # ดึงไฟล์ล่าสุดจาก Session State
+    active_files = st.session_state.pdf_files
+    
+    if not active_files:
         st.error("แจ้งเตือน: ยังไม่มีไฟล์ PDF ในระบบเลยค่ะ")
     elif not final_filename.strip():
         st.error("แจ้งเตือน: กรุณาใส่ชื่อไฟล์ด้วยนะคะ")
@@ -128,7 +116,7 @@ if st.button("★  เริ่มบันทึกและรวมไฟล�
         try:
             with st.spinner("ระบบกำลังรวมไฟล์ให้อยู่นะคะ..."):
                 writer = PdfWriter()
-                for pdf_file in st.session_state.pdf_files:
+                for pdf_file in active_files:
                     reader = PdfReader(pdf_file)
                     for page in reader.pages:
                         writer.add_page(page)
