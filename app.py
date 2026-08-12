@@ -1,7 +1,6 @@
 import io
 import streamlit as st
 from pypdf import PdfReader, PdfWriter
-from streamlit_sortables import sort_items
 
 # 1. กำหนดโครงสร้างหมวดหมู่
 CATEGORIES = {
@@ -36,47 +35,66 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# Session state สำหรับจัดเก็บข้อมูล
-if "pdf_files_dict" not in st.session_state:
-    st.session_state.pdf_files_dict = {}
+# Session State ความจำระบบกลางจุดเดียว
+if "file_list" not in st.session_state:
+    st.session_state.file_list = []  # เก็บเป็น list ของ dict: [{'name': filename, 'file': file_obj}]
 
-if "sorted_filenames" not in st.session_state:
-    st.session_state.sorted_filenames = []
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
 
-# ฟังก์ชันอัปเดตไฟล์เมื่อมีการเลือกไฟล์เพิ่ม
+# ฟังก์ชันอัปเดตไฟล์ใหม่เข้าลิสต์แบบต่อท้าย
 def sync_uploaded_files():
-    uploaded = st.session_state.get("uploader_widget", [])
+    key_name = f"uploader_{st.session_state.uploader_key}"
+    uploaded = st.session_state.get(key_name, [])
     if uploaded:
         for f in uploaded:
-            if f.name not in st.session_state.pdf_files_dict:
-                st.session_state.pdf_files_dict[f.name] = f
-                st.session_state.sorted_filenames.append(f.name)
+            # ป้องกันไฟล์ซ้ำ
+            if not any(item['name'] == f.name and item['file'].size == f.size for item in st.session_state.file_list):
+                st.session_state.file_list.append({'name': f.name, 'file': f})
 
 # 3. กล่องอัปโหลดไฟล์
 st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
     accept_multiple_files=True,
-    key="uploader_widget",
+    key=f"uploader_{st.session_state.uploader_key}",
     on_change=sync_uploaded_files
 )
 
-# 4. ส่วน Drag & Drop สลับลำดับแนวตั้ง (ใช้ Dynamic Key รีเซ็ต Widget เมื่อไฟล์เพิ่ม)
-if len(st.session_state.sorted_filenames) > 1:
+# 4. ส่วนจัดการไฟล์จุดเดียวจบ (แสดงรายการ / ขยับลำดับ / กดลบ)
+if st.session_state.file_list:
     st.write("---")
-    st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
+    st.subheader("📋 รายการไฟล์และการจัดลำดับ")
     
-    # บังคับอัปเดต Widget ด้วยการสร้าง key ตามจำนวนไฟล์ + ชื่อไฟล์รวมกัน
-    dynamic_key = f"sortable_{len(st.session_state.sorted_filenames)}_{'_'.join(st.session_state.sorted_filenames)}"
-    
-    sorted_res = sort_items(
-        st.session_state.sorted_filenames,
-        direction="vertical",
-        key=dynamic_key
-    )
-    
-    if sorted_res:
-        st.session_state.sorted_filenames = sorted_res
+    # ลูปแสดงรายการไฟล์แต่ละไฟล์
+    for idx, item in enumerate(st.session_state.file_list):
+        col_num, col_name, col_up, col_down, col_del = st.columns([0.5, 5, 1, 1, 1])
+        
+        col_num.write(f"**{idx + 1}.**")
+        col_name.write(f"📄 {item['name']}")
+        
+        # ปุ่มเลื่อนขึ้น
+        if col_up.button("▲", key=f"up_{idx}"):
+            if idx > 0:
+                st.session_state.file_list[idx], st.session_state.file_list[idx-1] = st.session_state.file_list[idx-1], st.session_state.file_list[idx]
+                st.rerun()
+                
+        # ปุ่มเลื่อนลง
+        if col_down.button("▼", key=f"down_{idx}"):
+            if idx < len(st.session_state.file_list) - 1:
+                st.session_state.file_list[idx], st.session_state.file_list[idx+1] = st.session_state.file_list[idx+1], st.session_state.file_list[idx]
+                st.rerun()
+                
+        # ปุ่มลบไฟล์แบบเด็ดขาด (ลบแล้วหายทันทีทั้งหน้าจอและหลังบ้าน)
+        if col_del.button("🗑️", key=f"del_{idx}"):
+            st.session_state.file_list.pop(idx)
+            st.rerun()
+
+    # ปุ่มล้างรายการทั้งหมดในคลิกเดียว
+    if st.button("✖ ล้างไฟล์ทั้งหมด ✖", use_container_width=True):
+        st.session_state.file_list = []
+        st.session_state.uploader_key += 1  # รีเซ็ตกล่อง uploader
+        st.rerun()
 
 st.write("---")
 
@@ -104,10 +122,9 @@ st.write("---")
 
 # 7. ปุ่มรวมไฟล์และดาวน์โหลด
 if st.button("★  เริ่มบันทึกและรวมไฟล์  ★", use_container_width=True):
-    ordered_names = st.session_state.sorted_filenames
-    files_map = st.session_state.pdf_files_dict
+    active_items = st.session_state.file_list
     
-    if not ordered_names or not files_map:
+    if not active_items:
         st.error("แจ้งเตือน: ยังไม่มีไฟล์ PDF ในระบบเลยค่ะ")
     elif not final_filename.strip():
         st.error("แจ้งเตือน: กรุณาใส่ชื่อไฟล์ด้วยนะคะ")
@@ -119,9 +136,8 @@ if st.button("★  เริ่มบันทึกและรวมไฟล�
         try:
             with st.spinner("ระบบกำลังรวมไฟล์ให้อยู่นะคะ..."):
                 writer = PdfWriter()
-                for name in ordered_names:
-                    pdf_file = files_map[name]
-                    reader = PdfReader(pdf_file)
+                for item in active_items:
+                    reader = PdfReader(item['file'])
                     for page in reader.pages:
                         writer.add_page(page)
                 
