@@ -16,12 +16,12 @@ st.set_page_config(
     layout="centered"
 )
 
-# Professional & Modern Styling (Clean, Elegant Pastel Soft Tone)
+# Professional & Modern Styling with Hover Gradient Animation
 st.markdown("""
 <style>
     /* Main Background & Font Styling */
     .stApp {
-        background-color: #ffe0f5;
+        background-color: #FAFAFC;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
@@ -38,32 +38,62 @@ st.markdown("""
         font-size: 0.95rem;
     }
 
-    /* Primary Action Buttons */
+    /* Primary Action Buttons - Normal State */
     .stButton>button {
-        background-color: #9e477b;
-        color: #000000;
-        border-radius: 8px;
+        background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+        color: #FFFFFF !important;
+        border-radius: 10px;
         border: none;
         font-weight: 600;
-        padding: 0.5rem 1rem;
-        transition: all 0.2s ease-in-out;
+        padding: 0.6rem 1.2rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
     }
+
+    /* Primary Action Buttons - Hover State (เปลี่ยนสีไล่ระดับ + ลอยขึ้น) */
     .stButton>button:hover {
-        background-color: #ba5290;
-        color: #000000;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+        background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -3px rgba(168, 85, 247, 0.35) !important;
+    }
+
+    /* Primary Action Buttons - Active (เมื่อกดปุ่ม) */
+    .stButton>button:active {
+        transform: translateY(0px);
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2) !important;
+    }
+
+    /* Download Button Hover State */
+    div[data-testid="stDownloadButton"]>button {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+        color: #FFFFFF !important;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    }
+
+    div[data-testid="stDownloadButton"]>button:hover {
+        background: linear-gradient(135deg, #06B6D4 0%, #10B981 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px -3px rgba(6, 182, 212, 0.35) !important;
     }
 
     /* Small Control Buttons (Reorder & Delete) */
     button[data-testid="baseButton-secondary"] {
-        background-color: #F1F5F9 !important;
+        background: #F1F5F9 !important;
         color: #475569 !important;
         border: 1px solid #E2E8F0 !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
+        transition: all 0.2s ease !important;
     }
+    
     button[data-testid="baseButton-secondary"]:hover {
-        background-color: #E2E8F0 !important;
+        background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%) !important;
         color: #0F172A !important;
+        transform: translateY(-1px);
     }
 
     /* File Uploader Container */
@@ -72,15 +102,11 @@ st.markdown("""
         border: 2px dashed #CBD5E1;
         border-radius: 12px;
         padding: 1rem;
+        transition: all 0.3s ease;
     }
     [data-testid="stFileUploader"]:hover {
-        border-color: #6366F1;
-    }
-
-    /* Divider */
-    hr {
-        margin: 1.5rem 0;
-        border-color: #F1F5F9;
+        border-color: #8B5CF6;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
     }
 </style>
 """, unsafe_allow_html=True)
