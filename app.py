@@ -36,7 +36,7 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# Session state สำหรับเก็บไฟล์และลำดับ
+# Session state จัดเก็บข้อมูล
 if "pdf_files_dict" not in st.session_state:
     st.session_state.pdf_files_dict = {}
 
@@ -48,13 +48,12 @@ def sync_uploaded_files():
     current_dict = {f.name: f for f in uploaded}
     st.session_state.pdf_files_dict = current_dict
     
-    # อัปเดตรายชื่อไฟล์เพื่อใช้ลากสลับลำดับ
-    st.session_state.sorted_filenames = [
-        name for name in st.session_state.sorted_filenames if name in current_dict
-    ]
+    # ซิงค์รายชื่อไฟล์ล่าสุด
+    updated_list = [name for name in st.session_state.sorted_filenames if name in current_dict]
     for name in current_dict:
-        if name not in st.session_state.sorted_filenames:
-            st.session_state.sorted_filenames.append(name)
+        if name not in updated_list:
+            updated_list.append(name)
+    st.session_state.sorted_filenames = updated_list
 
 # 3. กล่องอัปโหลดไฟล์
 st.file_uploader(
@@ -65,18 +64,23 @@ st.file_uploader(
     on_change=sync_uploaded_files
 )
 
-# 4. ส่วน Drag & Drop สลับลำดับไฟล์ด้วยเมาส์ (ปรับเป็นแนวตั้ง)
+# 4. ส่วน Drag & Drop สลับลำดับแนวตั้งแบบล็อก State ไม่ให้ค้าง
 if len(st.session_state.sorted_filenames) > 1:
     st.write("---")
     st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
     
-    # กำหนด direction="vertical" เพื่อให้แสดงรายการและลากสลับในแนวตั้ง
-    new_order = sort_items(
+    # ล็อคการคำนวณลำดับเพื่อป้องกันการดึงค่าเก่ากลับมาทับ
+    sorted_res = sort_items(
         st.session_state.sorted_filenames,
-        direction="vertical"
+        direction="vertical",
+        key="sortable_list"
     )
-    if new_order:
-        st.session_state.sorted_filenames = new_order
+    
+    if sorted_res and sorted_res != st.session_state.sorted_filenames:
+        st.session_state.sorted_filenames = sorted_res
+
+st.write("---")
+
 # 5. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
 selected_main = st.selectbox(
     "🎀 1. เลือกหมวดหลัก:",
