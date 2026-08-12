@@ -33,12 +33,13 @@ st.markdown("""
         margin-bottom: 0.2rem !important;
     }
     
+    /* บังคับสีม่วงเฉพาะตัวหนังสือทั่วไป (ไม่รวมปุ่ม) */
     h2, h3, h4, p, span, div {
-        color: #5c1153 !important;
+        color: #5c1153;
         font-weight: 500;
     }
     label {
-        color: #FFFFFF !important;
+        color: #0F172A !important;
         font-weight: 500;
     }
     .stCaption {
@@ -48,7 +49,6 @@ st.markdown("""
     /* Primary Action Buttons - Normal State */
     .stButton>button {
         background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
-        color: #FFFFFF !important;
         border-radius: 10px;
         border: none;
         font-weight: 600;
@@ -56,13 +56,21 @@ st.markdown("""
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
     }
+    
+    /* บังคับตัวหนังสือภายในปุ่มใหญ่ให้เป็นสีขาว 100% */
+    .stButton>button p, .stButton>button span, .stButton>button div {
+        color: #FFFFFF !important;
+    }
 
-    /* Primary Action Buttons - Hover State (เปลี่ยนสีไล่ระดับ + ลอยขึ้น) */
+    /* Primary Action Buttons - Hover State */
     .stButton>button:hover {
         background: linear-gradient(135deg, #A855F7 0%, #6366F1 100%) !important;
-        color: #FFFFFF !important;
         transform: translateY(-2px);
         box-shadow: 0 10px 20px -3px rgba(168, 85, 247, 0.35) !important;
+    }
+    
+    .stButton>button:hover p, .stButton>button:hover span, .stButton>button:hover div {
+        color: #FFFFFF !important;
     }
 
     /* Primary Action Buttons - Active */
@@ -74,12 +82,17 @@ st.markdown("""
     /* Download Button Hover State */
     div[data-testid="stDownloadButton"]>button {
         background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
-        color: #FFFFFF !important;
         border-radius: 10px;
         border: none;
         font-weight: 600;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+    }
+    
+    div[data-testid="stDownloadButton"]>button p, 
+    div[data-testid="stDownloadButton"]>button span, 
+    div[data-testid="stDownloadButton"]>button div {
+        color: #FFFFFF !important;
     }
 
     div[data-testid="stDownloadButton"]>button:hover {
@@ -88,19 +101,23 @@ st.markdown("""
         box-shadow: 0 10px 20px -3px rgba(6, 182, 212, 0.35) !important;
     }
 
-    /* Small Control Buttons (Reorder & Delete) - High Contrast Text */
+    /* Small Control Buttons (Reorder & Delete) */
     button[data-testid="baseButton-secondary"] {
         background: #F1F5F9 !important;
-        color: #0F172A !important;
         border: 1px solid #CBD5E1 !important;
         border-radius: 8px !important;
         font-weight: 700 !important;
         transition: all 0.2s ease !important;
     }
     
+    button[data-testid="baseButton-secondary"] p, 
+    button[data-testid="baseButton-secondary"] span, 
+    button[data-testid="baseButton-secondary"] div {
+        color: #0F172A !important;
+    }
+    
     button[data-testid="baseButton-secondary"]:hover {
         background: linear-gradient(135deg, #E2E8F0 0%, #CBD5E1 100%) !important;
-        color: #000000 !important;
         transform: translateY(-1px);
     }
 
