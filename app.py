@@ -43,17 +43,15 @@ if "pdf_files_dict" not in st.session_state:
 if "sorted_filenames" not in st.session_state:
     st.session_state.sorted_filenames = []
 
+# ฟังก์ชันอัปเดตไฟล์แบบต่อท้ายเสมอ (ไม่ลบไฟล์เก่า)
 def sync_uploaded_files():
     uploaded = st.session_state.get("uploader_widget", [])
-    current_dict = {f.name: f for f in uploaded}
-    st.session_state.pdf_files_dict = current_dict
-    
-    # ซิงค์รายชื่อไฟล์ล่าสุด
-    updated_list = [name for name in st.session_state.sorted_filenames if name in current_dict]
-    for name in current_dict:
-        if name not in updated_list:
-            updated_list.append(name)
-    st.session_state.sorted_filenames = updated_list
+    if uploaded:
+        for f in uploaded:
+            # เพิ่มไฟล์ใหม่เข้า Dictionary และต่อท้ายลิสต์จัดลำดับ
+            if f.name not in st.session_state.pdf_files_dict:
+                st.session_state.pdf_files_dict[f.name] = f
+                st.session_state.sorted_filenames.append(f.name)
 
 # 3. กล่องอัปโหลดไฟล์
 st.file_uploader(
@@ -64,12 +62,11 @@ st.file_uploader(
     on_change=sync_uploaded_files
 )
 
-# 4. ส่วน Drag & Drop สลับลำดับแนวตั้งแบบล็อก State ไม่ให้ค้าง
+# 4. ส่วน Drag & Drop สลับลำดับแนวตั้ง
 if len(st.session_state.sorted_filenames) > 1:
     st.write("---")
     st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
     
-    # ล็อคการคำนวณลำดับเพื่อป้องกันการดึงค่าเก่ากลับมาทับ
     sorted_res = sort_items(
         st.session_state.sorted_filenames,
         direction="vertical",
