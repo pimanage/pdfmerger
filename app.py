@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS ตกแต่งสีพาสเทล + ซ่อนรายชื่อไฟล์ในกล่อง Uploader ด้านบน
+# Custom CSS ตกแต่งสีพาสเทล + สั่งซ่อนการ์ดแสดงไฟล์ของ Uploader กล่องบนแบบครอบคลุมทุกคลาส
 st.markdown("""
 <style>
     .stApp {
@@ -29,8 +29,10 @@ st.markdown("""
         border: none;
         font-weight: 500;
     }
-    /* ซ่อนแถบแสดงรายชื่อไฟล์ของ uploader ด้านบน ไม่ให้แสดงซ้ำซ้อน */
-    [data-testid="stFileUploaderFileData"] {
+    /* ซ่อนการ์ดแสดงรายชื่อไฟล์ของกล่อง Uploader ด้านบนทุกเวอร์ชัน */
+    [data-testid="stFileUploaderFileData"],
+    section[data-testid="stFileUploader"] ul,
+    section[data-testid="stFileUploader"] div[role="list"] {
         display: none !important;
     }
 </style>
@@ -84,7 +86,7 @@ if st.session_state.file_list:
                 st.session_state.file_list[idx], st.session_state.file_list[idx+1] = st.session_state.file_list[idx+1], st.session_state.file_list[idx]
                 st.rerun()
                 
-        # ปุ่มลบไฟล์เดี่ยว (ลบเฉพาะไฟล์นี้ ไฟล์อื่นอยู่ครบ 100%)
+        # ปุ่มลบไฟล์เดี่ยว (ลบเฉพาะไฟล์นี้)
         if col_del.button("🗑️", key=f"del_{idx}"):
             st.session_state.file_list.pop(idx)
             st.rerun()
