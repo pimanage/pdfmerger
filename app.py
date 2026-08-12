@@ -1,7 +1,7 @@
 import io
 import streamlit as st
 from pypdf import PdfReader, PdfWriter
-from streamlit_drag_drop_sortable import drag_drop_sortable
+from streamlit_sortables import sort_items
 
 # 1. กำหนดโครงสร้างหมวดหมู่
 CATEGORIES = {
@@ -36,7 +36,7 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# สร้าง Session State เก็บไฟล์
+# Session state สำหรับเก็บไฟล์และลำดับ
 if "pdf_files_dict" not in st.session_state:
     st.session_state.pdf_files_dict = {}
 
@@ -56,7 +56,7 @@ def sync_uploaded_files():
         if name not in st.session_state.sorted_filenames:
             st.session_state.sorted_filenames.append(name)
 
-# 3. อัปโหลดไฟล์
+# 3. กล่องอัปโหลดไฟล์
 st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
@@ -70,11 +70,8 @@ if len(st.session_state.sorted_filenames) > 1:
     st.write("---")
     st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
     
-    # ตัวแปลงให้ลากสลับลำดับไฟล์ได้อิสระ
-    new_order = drag_drop_sortable(
-        st.session_state.sorted_filenames,
-        key="pdf_sorter"
-    )
+    # ใช้ streamlit-sortables สำหรับลากสลับลำดับ
+    new_order = sort_items(st.session_state.sorted_filenames)
     if new_order:
         st.session_state.sorted_filenames = new_order
 
@@ -119,7 +116,6 @@ if st.button("★  เริ่มบันทึกและรวมไฟล�
         try:
             with st.spinner("ระบบกำลังรวมไฟล์ให้อยู่นะคะ..."):
                 writer = PdfWriter()
-                # อ่านไฟล์เรียงตามลำดับใหม่ที่ผู้ใช้ลากสลับไว้
                 for name in ordered_names:
                     pdf_file = files_map[name]
                     reader = PdfReader(pdf_file)
