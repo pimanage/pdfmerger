@@ -34,7 +34,7 @@ st.markdown("""
     }
     
     h2, h3, h4, label, p, span, div {
-        color: #1E293B !important;
+        color: #FFFFFF !important;
         font-weight: 500;
     }
 
