@@ -1,6 +1,7 @@
 import io
 import streamlit as st
 from pypdf import PdfReader, PdfWriter
+from streamlit_drag_drop_sortable import drag_drop_sortable
 
 # 1. กำหนดโครงสร้างหมวดหมู่
 CATEGORIES = {
@@ -35,18 +36,28 @@ st.markdown("""
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# สร้าง Session State สำหรับเก็บไฟล์ที่ใช้งานจริง
-if "pdf_files" not in st.session_state:
-    st.session_state.pdf_files = []
+# สร้าง Session State เก็บไฟล์
+if "pdf_files_dict" not in st.session_state:
+    st.session_state.pdf_files_dict = {}
 
-# ฟังก์ชันอัปเดตไฟล์จากกล่อง Upload
+if "sorted_filenames" not in st.session_state:
+    st.session_state.sorted_filenames = []
+
 def sync_uploaded_files():
-    # ดึงไฟล์ทั้งหมดจาก Widget
-    raw_files = st.session_state.get("uploader_widget", [])
-    st.session_state.pdf_files = list(raw_files)
+    uploaded = st.session_state.get("uploader_widget", [])
+    current_dict = {f.name: f for f in uploaded}
+    st.session_state.pdf_files_dict = current_dict
+    
+    # อัปเดตรายชื่อไฟล์เพื่อใช้ลากสลับลำดับ
+    st.session_state.sorted_filenames = [
+        name for name in st.session_state.sorted_filenames if name in current_dict
+    ]
+    for name in current_dict:
+        if name not in st.session_state.sorted_filenames:
+            st.session_state.sorted_filenames.append(name)
 
-# 3. รวมการจัดการไฟล์ไว้จุดเดียว (อัปโหลด / ลบ / ดูรายการ)
-uploaded_raw = st.file_uploader(
+# 3. อัปโหลดไฟล์
+st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
     accept_multiple_files=True,
@@ -54,30 +65,22 @@ uploaded_raw = st.file_uploader(
     on_change=sync_uploaded_files
 )
 
-# แสดงปุ่มจัดลำดับเฉพาะเมื่อมีไฟล์ในระบบมากกว่า 1 ไฟล์
-if len(st.session_state.pdf_files) > 1:
+# 4. ส่วน Drag & Drop สลับลำดับไฟล์ด้วยเมาส์
+if len(st.session_state.sorted_filenames) > 1:
     st.write("---")
-    st.subheader("📋 จัดลำดับการรวมไฟล์")
+    st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
     
-    for idx, file in enumerate(st.session_state.pdf_files):
-        col_name, col_up, col_down = st.columns([6, 1, 1])
-        col_name.text(f"{idx + 1}. {file.name}")
-        
-        # ปุ่มเลื่อนขึ้น
-        if col_up.button("▲", key=f"up_{idx}"):
-            if idx > 0:
-                st.session_state.pdf_files[idx], st.session_state.pdf_files[idx-1] = st.session_state.pdf_files[idx-1], st.session_state.pdf_files[idx]
-                st.rerun()
-                
-        # ปุ่มเลื่อนลง
-        if col_down.button("▼", key=f"down_{idx}"):
-            if idx < len(st.session_state.pdf_files) - 1:
-                st.session_state.pdf_files[idx], st.session_state.pdf_files[idx+1] = st.session_state.pdf_files[idx+1], st.session_state.pdf_files[idx]
-                st.rerun()
+    # ตัวแปลงให้ลากสลับลำดับไฟล์ได้อิสระ
+    new_order = drag_drop_sortable(
+        st.session_state.sorted_filenames,
+        key="pdf_sorter"
+    )
+    if new_order:
+        st.session_state.sorted_filenames = new_order
 
 st.write("---")
 
-# 4. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
+# 5. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
 selected_main = st.selectbox(
     "🎀 1. เลือกหมวดหลัก:",
     options=list(CATEGORIES.keys())
@@ -89,7 +92,7 @@ selected_sub = st.selectbox(
     options=sub_options
 )
 
-# 5. คำนวณชื่อไฟล์ตั้งต้น และช่องให้แก้ไข
+# 6. คำนวณชื่อไฟล์ตั้งต้น และช่องให้แก้ไข
 default_filename = f"{selected_main}_{selected_sub}_[ระบุรายละเอียด]"
 
 final_filename = st.text_input(
@@ -99,12 +102,12 @@ final_filename = st.text_input(
 
 st.write("---")
 
-# 6. ปุ่มรวมไฟล์และดาวน์โหลด
+# 7. ปุ่มรวมไฟล์และดาวน์โหลด
 if st.button("★  เริ่มบันทึกและรวมไฟล์  ★", use_container_width=True):
-    # ดึงไฟล์ล่าสุดจาก Session State
-    active_files = st.session_state.pdf_files
+    ordered_names = st.session_state.sorted_filenames
+    files_map = st.session_state.pdf_files_dict
     
-    if not active_files:
+    if not ordered_names or not files_map:
         st.error("แจ้งเตือน: ยังไม่มีไฟล์ PDF ในระบบเลยค่ะ")
     elif not final_filename.strip():
         st.error("แจ้งเตือน: กรุณาใส่ชื่อไฟล์ด้วยนะคะ")
@@ -116,7 +119,9 @@ if st.button("★  เริ่มบันทึกและรวมไฟล�
         try:
             with st.spinner("ระบบกำลังรวมไฟล์ให้อยู่นะคะ..."):
                 writer = PdfWriter()
-                for pdf_file in active_files:
+                # อ่านไฟล์เรียงตามลำดับใหม่ที่ผู้ใช้ลากสลับไว้
+                for name in ordered_names:
+                    pdf_file = files_map[name]
                     reader = PdfReader(pdf_file)
                     for page in reader.pages:
                         writer.add_page(page)
