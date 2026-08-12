@@ -16,7 +16,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS ตกแต่งสีพาสเทล + สั่งซ่อนการ์ดแสดงไฟล์ของ Uploader กล่องบนแบบครอบคลุมทุกคลาส
+# Custom CSS ตกแต่งสีพาสเทล
 st.markdown("""
 <style>
     .stApp {
@@ -29,41 +29,43 @@ st.markdown("""
         border: none;
         font-weight: 500;
     }
-    /* ซ่อนการ์ดแสดงรายชื่อไฟล์ของกล่อง Uploader ด้านบนทุกเวอร์ชัน */
-    [data-testid="stFileUploaderFileData"],
-    section[data-testid="stFileUploader"] ul,
-    section[data-testid="stFileUploader"] div[role="list"] {
-        display: none !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 st.title("✿ PDF Merger & Naming Tool ✿")
 st.write("❤ ลากไฟล์ PDF มาวางในกล่องด้านล่างได้เลยค่ะ ❤")
 
-# Session State ระบบความจำกลางจุดเดียว
+# Session State ระบบความจำหลังบ้าน
 if "file_list" not in st.session_state:
     st.session_state.file_list = []
 
-# ฟังก์ชันเพิ่มไฟล์ใหม่เข้าลิสต์ล่าง
-def sync_uploaded_files():
-    uploaded = st.session_state.get("uploader_widget", [])
+if "uploader_key" not in st.session_state:
+    st.session_state.uploader_key = 0
+
+# ฟังก์ชันดึงไฟล์ลงมาเก็บหลังบ้าน แล้วเคลียร์กล่องบนให้ว่างเปล่าทันที
+def process_new_files():
+    key_name = f"uploader_{st.session_state.uploader_key}"
+    uploaded = st.session_state.get(key_name, [])
+    
     if uploaded:
         for f in uploaded:
-            # เพิ่มเฉพาะไฟล์ใหม่ ป้องกันการเพิ่มไฟล์ซ้ำ
+            # ป้องกันไฟล์ซ้ำตามชื่อและขนาด
             if not any(item['name'] == f.name and item['file'].size == f.size for item in st.session_state.file_list):
                 st.session_state.file_list.append({'name': f.name, 'file': f})
+        
+        # เปลี่ยน Key ของ Uploader เพื่อรีเซ็ตกล่องบนให้กลายเป็นกล่องว่างเปล่าทันที
+        st.session_state.uploader_key += 1
 
-# 3. กล่องอัปโหลดไฟล์ (ซ่อนรายการไฟล์ด้านบนไว้แล้ว)
+# 3. กล่องอัปโหลดไฟล์ (จะถูกรีเซ็ตให้ว่างเปล่าอัตโนมัติทุกครั้งที่เลือกไฟล์)
 st.file_uploader(
     "หรือคลิกเลือกไฟล์ที่นี่ (เลือกได้หลายไฟล์พร้อมกัน)",
     type=["pdf"],
     accept_multiple_files=True,
-    key="uploader_widget",
-    on_change=sync_uploaded_files
+    key=f"uploader_{st.session_state.uploader_key}",
+    on_change=process_new_files
 )
 
-# 4. ส่วนจัดการไฟล์เดี่ยวจุดเดียว (แสดงรายการ / เลื่อนขึ้นลง / ลบทีละไฟล์)
+# 4. ส่วนจัดการไฟล์จุดเดียว (แสดงรายการ / เลื่อนขึ้นลง / ลบทีละไฟล์)
 if st.session_state.file_list:
     st.write("---")
     st.subheader("📋 รายการไฟล์ที่เลือกทั้งหมด")
@@ -86,7 +88,7 @@ if st.session_state.file_list:
                 st.session_state.file_list[idx], st.session_state.file_list[idx+1] = st.session_state.file_list[idx+1], st.session_state.file_list[idx]
                 st.rerun()
                 
-        # ปุ่มลบไฟล์เดี่ยว (ลบเฉพาะไฟล์นี้)
+        # ปุ่มลบไฟล์เดี่ยว (ลบออกแล้วหายสาบสูญ ไม่เด้งกลับมาอีกแน่นอน)
         if col_del.button("🗑️", key=f"del_{idx}"):
             st.session_state.file_list.pop(idx)
             st.rerun()
