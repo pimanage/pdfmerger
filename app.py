@@ -33,11 +33,14 @@ st.markdown("""
         margin-bottom: 0.2rem !important;
     }
     
-    h2, h3, h4, label, p, span, div {
+    h2, h3, h4, p, span, div {
         color: #5c1153 !important;
         font-weight: 500;
     }
-
+    label {
+        color: #FFFFFF !important;
+        font-weight: 500;
+    }
     .stCaption {
         color: #334155 !important;
     }
