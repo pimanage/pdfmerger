@@ -21,7 +21,7 @@ st.markdown("""
 <style>
     /* Main Background & Font Styling */
     .stApp {
-        background-color: #FAFAFC;
+        background-color: #ffe0f5;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
@@ -40,7 +40,7 @@ st.markdown("""
 
     /* Primary Action Buttons */
     .stButton>button {
-        background-color: #6366F1;
+        background-color: #9e477b;
         color: #FFFFFF;
         border-radius: 8px;
         border: none;
@@ -49,7 +49,7 @@ st.markdown("""
         transition: all 0.2s ease-in-out;
     }
     .stButton>button:hover {
-        background-color: #4F46E5;
+        background-color: #ba5290;
         color: #FFFFFF;
         box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
     }
