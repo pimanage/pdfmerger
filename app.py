@@ -65,18 +65,18 @@ st.file_uploader(
     on_change=sync_uploaded_files
 )
 
-# 4. ส่วน Drag & Drop สลับลำดับไฟล์ด้วยเมาส์
+# 4. ส่วน Drag & Drop สลับลำดับไฟล์ด้วยเมาส์ (ปรับเป็นแนวตั้ง)
 if len(st.session_state.sorted_filenames) > 1:
     st.write("---")
     st.subheader("📋 ลากสลับลำดับการรวมไฟล์ด้านล่างนี้ได้เลยค่ะ")
     
-    # ใช้ streamlit-sortables สำหรับลากสลับลำดับ
-    new_order = sort_items(st.session_state.sorted_filenames)
+    # กำหนด direction="vertical" เพื่อให้แสดงรายการและลากสลับในแนวตั้ง
+    new_order = sort_items(
+        st.session_state.sorted_filenames,
+        direction="vertical"
+    )
     if new_order:
         st.session_state.sorted_filenames = new_order
-
-st.write("---")
-
 # 5. Dropdown เลือกหมวดหมู่หลัก และหมวดย่อย
 selected_main = st.selectbox(
     "🎀 1. เลือกหมวดหลัก:",
